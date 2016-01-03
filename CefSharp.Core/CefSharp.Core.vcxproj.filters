@@ -289,4 +289,7 @@
   <ItemGroup>
     <ResourceCompile Include="Resource.rc" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="handlers.txt" />
+  </ItemGroup>
 </Project>
