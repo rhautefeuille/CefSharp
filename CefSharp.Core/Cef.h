@@ -23,6 +23,10 @@
 #include "RequestContext.h"
 #include "SchemeHandlerFactoryWrapper.h"
 
+#include "Safe/CefAppSafe.h"
+#include "Safe/CefWebPluginInfoVisitorSafe.h"
+#include "Safe/CefSchemeHandlerFactorySafe.h"
+
 using namespace System::Collections::Generic; 
 using namespace System::Linq;
 using namespace System::Reflection;
@@ -187,8 +191,7 @@ namespace CefSharp
             FileThreadTaskFactory = gcnew TaskFactory(gcnew CefTaskScheduler(TID_FILE));
 
             CefMainArgs main_args;
-            CefRefPtr<CefSharpApp> app(new CefSharpApp(cefSettings, browserProcessHandler));
-
+            CefRefPtr<CefAppSafe> app(new CefAppSafe(new CefSharpApp(cefSettings, browserProcessHandler)));
             auto success = CefInitialize(main_args, *(cefSettings->_cefSettings), app.get(), NULL);
 
             //Register SchemeHandlerFactories - must be called after CefInitialize
@@ -196,7 +199,7 @@ namespace CefSharp
             {
                 auto domainName = cefCustomScheme->DomainName ? cefCustomScheme->DomainName : String::Empty;
 
-                CefRefPtr<CefSchemeHandlerFactory> wrapper = new SchemeHandlerFactoryWrapper(cefCustomScheme->SchemeHandlerFactory);
+                CefRefPtr<CefSchemeHandlerFactory> wrapper = new CefSchemeHandlerFactorySafe(new SchemeHandlerFactoryWrapper(cefCustomScheme->SchemeHandlerFactory));
                 CefRegisterSchemeHandlerFactory(StringUtils::ToNative(cefCustomScheme->SchemeName), StringUtils::ToNative(domainName), wrapper);
             }
 
@@ -449,7 +452,8 @@ namespace CefSharp
         static Task<List<WebPluginInfo^>^>^ GetPlugins()
         {
             auto taskVisitor = gcnew TaskWebPluginInfoVisitor();
-            CefRefPtr<PluginVisitor> visitor = new PluginVisitor(taskVisitor);
+            auto pluginVisitor = new PluginVisitor(taskVisitor);
+            CefRefPtr<CefWebPluginInfoVisitorSafe> visitor = new CefWebPluginInfoVisitorSafe(pluginVisitor);
             
             CefVisitWebPluginInfo(visitor);
 
